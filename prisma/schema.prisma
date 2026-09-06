@@ -1,0 +1,62 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = ""
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CourierProvider {
+  PATHAO
+}
+
+enum CourierEnvironment {
+  SANDBOX
+  LIVE
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  status    UserStatus @default(ACTIVE)
+
+  refreshTokenHash String?    @map("refresh_token_hash")
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?
+
+  @@map("users")
+}
+
+model CourierToken {
+  id          String             @id @default(uuid())
+  provider    CourierProvider
+  environment CourierEnvironment @default(SANDBOX)
+
+  tokenType    String @map("token_type")
+  accessToken  String @db.Text @map("access_token")
+  refreshToken String @db.Text @map("refresh_token")
+  expiresIn    Int    @map("expires_in")
+
+  accessTokenExpiresAt DateTime @map("access_token_expires_at")
+  lastIssuedAt         DateTime @default(now()) @map("last_issued_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([provider, environment])
+  @@index([accessTokenExpiresAt])
+  @@map("courier_tokens")
+}
